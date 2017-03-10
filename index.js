@@ -84,6 +84,7 @@ function loop(){
             if(m.message.entities != null && m.message.entities.length > 0 && m.message.entities[0] == 'bot_command'){
                 switch(text.substr(m.message.entities[0].offset, m.message.entities[0].length)){
                     case '/join':
+                        console.log('> /join');
                         if(m.message.entities.length == 2){
                             try
                             {
@@ -100,6 +101,7 @@ function loop(){
                             sendTextResponse('Invalid arguments. Please type /help for a list of commands.', chat_id);
                         break;
                     case '/tell':
+                        console.log('> /tell');
                         if(client.bot == null){
                             sendTextResponse('You must join a server before using this command.', chat_id);
                             break;
