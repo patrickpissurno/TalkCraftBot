@@ -1,0 +1,31 @@
+{
+  "name": "talk-craft-bot",
+  "version": "1.0.0",
+  "description": "Telegram Bot to chat in Minecraft servers",
+  "main": "index.js",
+  "dependencies": {
+    "request": "^2.81.0",
+    "readline-sync": "^1.4.6",
+    "mineflayer": "^2.1.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/patrickpissurno/TalkCraftBot.git"
+  },
+  "keywords": [
+    "minecraft",
+    "telegram-bot",
+    "mineflayer-bot",
+    "open-source"
+  ],
+  "author": "patrickpissurno",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/patrickpissurno/TalkCraftBot/issues"
+  },
+  "homepage": "https://github.com/patrickpissurno/TalkCraftBot#readme"
+}

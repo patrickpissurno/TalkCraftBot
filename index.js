@@ -1,7 +1,9 @@
 var request = require('request');
 var mineflayer = require('mineflayer');
+var readlineSync = require('readline-sync');
 
-var API_TOKEN = "301876748:AAFc6ZoZH-I21gogXNzReaS8qEvEOXtmxS4";
+var API_TOKEN = readlineSync.question('What is your Telegram API Token?\n');
+
 var BASE_URL = "https://api.telegram.org/bot{{token}}".replace("{{token}}", API_TOKEN);
 
 String.prototype.replaceAll = function (find, replace) {
@@ -134,9 +136,7 @@ function loop(){
             client.chat_id = chat_id;
 
             var text = m.message.text;
-            // console.log(text);
             if(m.message.entities != null && m.message.entities.length > 0 && m.message.entities[0].type == 'bot_command'){
-                // console.log(text.substr(m.message.entities[0].offset, m.message.entities[0].length));
                 switch(text.substr(m.message.entities[0].offset, m.message.entities[0].length)){
                     case '/join':
                         if(client.bot == null)
@@ -160,7 +160,6 @@ function loop(){
                             sendTextResponse("You're already connected to a server. Use you must /quit before joining another", chat_id);
                         break;
                     case '/tell':
-                        // console.log('> /tell');
                         if(client.bot == null){
                             sendTextResponse('You must join a server before using this command.', chat_id);
                             break;
@@ -266,3 +265,4 @@ function sendHTMLResponse(text, chat_id){
 }
 
 setInterval(loop, 100);
+console.log("Bot started successfully");
