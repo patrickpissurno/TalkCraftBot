@@ -1,17 +1,8 @@
-var express = require('express');
-var bodyParser = require('body-parser');
 var request = require('request');
-var shell = require('shelljs');
-var fs = require('fs');
 var mineflayer = require('mineflayer');
-var app = express();
 
 var API_TOKEN = "301876748:AAFc6ZoZH-I21gogXNzReaS8qEvEOXtmxS4";
 var BASE_URL = "https://api.telegram.org/bot{{token}}".replace("{{token}}", API_TOKEN);
-
-app.use(bodyParser.urlencoded({
-  extended: true
-}));
 
 String.prototype.replaceAll = function (find, replace) {
     var str = this;
@@ -25,6 +16,7 @@ var Client = function(id){
     this.password = null;
     this.ip = null;
     this.port = null;
+    this.health = 20;
 
     this.bot = null;
     this.connect = () => {
@@ -37,20 +29,80 @@ var Client = function(id){
             version : '1.8'
         });
 
+        var bot = this.bot;
+        var chat_id = this.chat_id;
+        var client = this;
+
         this.bot.on('login', function() {
-            sendTextResponse("Connection Success!", this.chat_id);
+            sendHTMLResponse("<i>" + bot.username + " joined the game</i>", chat_id);
+        });
+
+        this.bot.on('spawn', function() {
+            // sendTextResponse("Spawn Success!", chat_id);
+            // bot.chat("I spawned, watch out!");
+            client.health = 20;
+        });
+
+        // this.bot.on('entityHurt', function(entity) {
+        //     if(entity.username == bot.username) {
+        //         sendHTMLResponse("<i>You received " + (bot.health - entity.health) + " damage. HP: " + bot.health + "/20</i>", chat_id);
+        //     }
+        // });
+
+        this.bot.on('health', function() {
+            if(bot.health < client.health)
+                sendHTMLResponse("<i>You received " + (client.health - bot.health) + " damage. HP: " + bot.health + "/20</i>", chat_id);
+            else if(bot.health == 20 && client.health != 20)
+                sendHTMLResponse("<i>Your life is full again</i>", chat_id);
+            client.health = bot.health;
+        });
+
+        this.bot.on('death', function() {
+            sendHTMLResponse("<i>You died.</i>", chat_id);
         });
 
         this.bot.on('chat', (username, message) => {
             if(username === bot.username)
                 return;
-            sendTextResponse(username + ': ' + message, this.chat_id);
+            sendTextResponse(username + ': ' + message, chat_id);
+        });
+
+        this.bot.on('message', (j) => {
+            if(j.translate != 'chat.type.announcement' || j.translate.indexOf('commands.') == -1)
+            {
+                switch(j.translate)
+                {
+                    case 'chat.type.announcement':
+                        sendTextResponse('Server: ' + j.with[1].extra.join(''), chat_id);
+                        break;
+                    case 'commands.generic.permission':
+                        sendHTMLResponse("<i>You don't have permission to use this command.</i>", chat_id);
+                        break;
+                }
+            }
+            // sendTextResponse(username + ': ' + message, chat_id);
         });
 
         this.bot.on('whisper', (username, message) => {
             if(username === bot.username)
                 return;
-            sendTextResponse(username + ': ' + '<i>' + message.replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('&', '&amp;') + '</i>', this.chat_id);
+            sendHTMLResponse(username + ': ' + '<i>' + message.replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('&', '&amp;') + '</i>', chat_id);
+        });
+
+        this.bot.on('nonSpokenChat', function(message) {
+            sendTextResponse(message, chat_id);
+        });
+
+        this.bot.on('playerJoined', function(player) {
+            if(player.username != bot.username) {
+                sendHTMLResponse("<i>" + player.username + " joined the game</i>", chat_id);
+            }
+        });
+
+        this.bot.on('playerLeft', function(player) {
+            if(player.username != bot.username) {
+                sendHTMLResponse("<i>" + player.username + " left the game</i>", chat_id);
+            }
         });
     }
     this.say = (message) => {
@@ -82,29 +134,33 @@ function loop(){
             client.chat_id = chat_id;
 
             var text = m.message.text;
-            console.log(text);
+            // console.log(text);
             if(m.message.entities != null && m.message.entities.length > 0 && m.message.entities[0].type == 'bot_command'){
-                console.log(text.substr(m.message.entities[0].offset, m.message.entities[0].length));
+                // console.log(text.substr(m.message.entities[0].offset, m.message.entities[0].length));
                 switch(text.substr(m.message.entities[0].offset, m.message.entities[0].length)){
                     case '/join':
-                        console.log('> /join');
-                        if(m.message.entities.length == 2){
-                            try
-                            {
-                                var arr = text.substr(m.message.entities[1].offset, m.message.entities[1].length).split(':');
-                                client.ip = arr[0];
-                                client.port = arr.length > 1 ? parseInt(arr[1]) : 25565;
-                                sendTextResponse('Please login with your Minecraft Account.\n\nWhat is your username?', chat_id);
+                        if(client.bot == null)
+                        {
+                            if(m.message.entities.length == 2){
+                                try
+                                {
+                                    var arr = text.substr(m.message.entities[1].offset, m.message.entities[1].length).split(':');
+                                    client.ip = arr[0];
+                                    client.port = arr.length > 1 ? parseInt(arr[1]) : 25565;
+                                    sendTextResponse('What is your username?', chat_id);
+                                }
+                                catch(err){
+                                    sendTextResponse('Invalid arguments. Please type /help for a list of commands.', chat_id);
+                                }
                             }
-                            catch(err){
+                            else
                                 sendTextResponse('Invalid arguments. Please type /help for a list of commands.', chat_id);
-                            }
                         }
                         else
-                            sendTextResponse('Invalid arguments. Please type /help for a list of commands.', chat_id);
+                            sendTextResponse("You're already connected to a server. Use you must /quit before joining another", chat_id);
                         break;
                     case '/tell':
-                        console.log('> /tell');
+                        // console.log('> /tell');
                         if(client.bot == null){
                             sendTextResponse('You must join a server before using this command.', chat_id);
                             break;
@@ -125,19 +181,52 @@ function loop(){
                         else
                             sendTextResponse('Invalid arguments. Please type /help for a list of commands.', chat_id);
                         break;
+                    case '/health':
+                        if(client.bot == null){
+                            sendTextResponse('You must join a server before using this command.', chat_id);
+                            break;
+                        }
+                        else
+                        {
+                            sendTextResponse('Your health is ' + Math.round(client.bot.health / 20 * 100) + "% and your food is " + Math.round(client.bot.food / 20 * 100) + "%", chat_id);
+                        }
+                        break;
+                    case '/quit':
+                        if(client.bot == null){
+                            sendTextResponse('You must join a server before using this command.', chat_id);
+                            break;
+                        }
+                        else
+                        {
+                            sendHTMLResponse('<i>' + client.username + ' left the game</i>', chat_id);
+                            client.bot.quit();
+                            clients[client.id] = null;
+                        }
+                        break;
+                    default:
+                        if(client.bot == null){
+                            sendTextResponse('Unknown command. Please type /help for a list of commands.', chat_id);
+                            break;
+                        }
+                        else
+                        {
+                            client.say(text);
+                        }
+                        break;
                 }
             }
             else if(client.ip != null && client.port != null)
             {
                 if(client.username == null){
                     client.username = text;
-                    sendTextResponse('And what is your password?', chat_id);
-                }
-                else if(client.password == null){
-                    client.password = text;
-                    sendTextResponse('Attemping to connect...', chat_id);
+                    // sendTextResponse('And what is your password?', chat_id);
                     client.connect();
                 }
+                // else if(client.password == null){
+                //     client.password = text;
+                //     sendTextResponse('Attemping to connect...', chat_id);
+                //     client.connect();
+                // }
                 else
                 {
                     if(client.bot != null){
@@ -176,7 +265,4 @@ function sendHTMLResponse(text, chat_id){
     });
 }
 
-app.listen(80,function(){
-    console.log("Working on port " + 80);
-    setInterval(loop, 100);
-});
+setInterval(loop, 100);
