@@ -32,7 +32,7 @@ var Client = function(id){
             host: this.ip,
             port: this.port,
             username: this.username,
-            password: this.password,
+            // password: this.password,
             verbose: true,
             version : '1.8'
         });
