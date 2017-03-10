@@ -34,6 +34,7 @@ var Client = function(id){
             username: this.username,
             password: this.password,
             verbose: true,
+            version : '1.8'
         });
 
         this.bot.on('login', function() {
