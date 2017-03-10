@@ -81,6 +81,7 @@ function loop(){
             client.chat_id = chat_id;
 
             var text = m.message.text;
+            console.log(text);
             if(m.message.entities != null && m.message.entities.length > 0 && m.message.entities[0] == 'bot_command'){
                 console.log(text.substr(m.message.entities[0].offset, m.message.entities[0].length));
                 switch(text.substr(m.message.entities[0].offset, m.message.entities[0].length)){
