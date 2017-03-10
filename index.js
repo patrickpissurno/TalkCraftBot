@@ -36,16 +36,20 @@ var Client = function(id){
             verbose: true,
         });
 
+        this.bot.on('login', function() {
+            sendTextResponse("Connection Success!", this.chat_id);
+        });
+
         this.bot.on('chat', (username, message) => {
             if(username === bot.username)
                 return;
-            sendTextResponse(username + ': ' + message, chat_id);
+            sendTextResponse(username + ': ' + message, this.chat_id);
         });
 
         this.bot.on('whisper', (username, message) => {
             if(username === bot.username)
                 return;
-            sendTextResponse(username + ': ' + '<i>' + message.replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('&', '&amp;') + '</i>', chat_id);
+            sendTextResponse(username + ': ' + '<i>' + message.replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('&', '&amp;') + '</i>', this.chat_id);
         });
     }
     this.say = (message) => {
@@ -80,22 +84,20 @@ function loop(){
             if(m.message.entities.length > 0 && m.message.entities[0] == 'bot_command'){
                 switch(text.substr(m.message.entities[0].offset, m.message.entities[0].length)){
                     case '/join':
-                        for(var i = 0; i<m.message.entities.length; i++){
-                            if(i == 0)
-                                continue;
-                            if(m.message.entities.length == 2 && i == 1){
-                                try
-                                {
-                                    var arr = text.substr(m.message.entities[i].offset, m.message.entities[i].length).split(':');
-                                    client.ip = arr[0];
-                                    client.port = arr.length > 1 ? parseInt(arr[1]) : 25565;
-                                    sendTextResponse('Please login with your Minecraft Account.\n\nWhat is your username?', chat_id);
-                                }
-                                catch(err){
-                                    sendTextResponse('Invalid arguments. Please type /help for a list of commands.', chat_id);
-                                }
+                        if(m.message.entities.length == 2){
+                            try
+                            {
+                                var arr = text.substr(m.message.entities[1].offset, m.message.entities[1].length).split(':');
+                                client.ip = arr[0];
+                                client.port = arr.length > 1 ? parseInt(arr[1]) : 25565;
+                                sendTextResponse('Please login with your Minecraft Account.\n\nWhat is your username?', chat_id);
+                            }
+                            catch(err){
+                                sendTextResponse('Invalid arguments. Please type /help for a list of commands.', chat_id);
                             }
                         }
+                        else
+                            sendTextResponse('Invalid arguments. Please type /help for a list of commands.', chat_id);
                         break;
                     case '/tell':
                         if(client.bot == null){
